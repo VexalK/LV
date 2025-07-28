@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>轻芒商店 - 应用商店</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script type="text/tailwindcss">
+   tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#165DFF',
+            secondary: '#7B61FF',
+            success: '#00B42A',
+            warning: '#FF7D00',
+            danger: '#F53F3F',
+            dark: '#1D2129',
+            'gray-light': '#F2F3F5',
+            'gray-medium': '#86909C',
+            'gray-dark': '#4E5969'
+          },
+          fontFamily: {
+            inter: ['Inter', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .hover-scale {
+        transition: transform 0.3s ease;
+      }
+      .hover-scale:hover {
+        transform: scale(1.05);
+      }
+      .hover-shadow {
+        transition: box-shadow 0.3s ease;
+      }
+      .hover-shadow:hover {
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+      }
+    }
+  </style>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#165DFF',
+            secondary: '#7B61FF',
+            success: '#00B42A',
+            warning: '#FF7D00',
+            danger: '#F53F3F',
+            dark: '#1D2129',
+            'gray-light': '#F2F3F5',
+            'gray-medium': '#86909C',
+            'gray-dark': '#4E5969'
+          },
+          fontFamily: {
+            inter: ['Inter', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+  <link href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind配置 -->
+    <script>
+      // 更新应用点击次数
+      function updateAppClicks(appId) {
+        let apps = JSON.parse(localStorage.getItem('appClicks') || '[]');
+        const appIndex = apps.findIndex(app => app.id === appId);
+        
+        if (appIndex > -1) {
+          apps[appIndex].clicks++;
+        } else {
+          // 如果应用不在排行榜数据中，添加它
+          const appData = window.appData.find(app => app.id === appId);
+          if (appData) {
+            apps.push({
+              id: appData.id,
+              name: appData.name,
+              icon: appData.icon,
+              category: appData.category,
+              clicks: 1
+            });
+          }
+        }
+        
+        localStorage.setItem('appClicks', JSON.stringify(apps));
+      }
+
+      // 初始化应用列表数据
+      window.appData = [];
+
+      // 从localStorage获取排行榜数据并排序
+        function getRankedApps() {
+          const appClicks = JSON.parse(localStorage.getItem('appClicks') || '[]');
+          // 合并应用详情并按点击量排序
+          return window.appData.map(app => {
+            const clickData = appClicks.find(item => item.id === app.id);
+            return {
+              ...app,
+              clicks: clickData ? clickData.clicks : 0
+            };
+          }).sort((a, b) => b.clicks - a.clicks);
+        }
+
+        // 页面加载完成后渲染应用卡片
+        // 搜索功能
+      function handleSearch() {
+        const searchInput = document.querySelector('input[placeholder="搜索应用..."]');
+        const searchTerm = searchInput.value.toLowerCase().trim();
+        // 已在上方声明appGrid变量
+            // // 已在上方声明appGrid变量
+            // const appGrid = document.getElementById('app-grid');
+
+        if (appGrid) {
+          const rankedApps = getRankedApps();
+          const filteredApps = searchTerm ? rankedApps.filter(app => 
+            app.name.toLowerCase().includes(searchTerm) || 
+            app.category.toLowerCase().includes(searchTerm)
+          ) : rankedApps;
+
+          appGrid.innerHTML = filteredApps.map(app => `
+            <div class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 hover-scale cursor-pointer" onclick="window.location.href='detail.html?id=${app.id}'">
+              <div class="relative">
+                <img src="${app.icon}" alt="${app.name}" class="w-full h-48 object-cover">
+                <div class="absolute top-3 right-3 bg-primary/90 text-white text-xs font-bold px-2 py-1 rounded-full">
+                  ${app.price}
+                </div>
+              </div>
+              <div class="p-4">
+                <h3 class="font-bold text-lg">${app.name}</h3>
+                <p class="text-gray-medium text-sm mt-1">${app.category}</p>
+                <div class="flex items-center justify-between mt-3">
+                  <div class="flex items-center">
+                    <div class="flex text-warning text-sm">
+                      ${'★'.repeat(Math.floor(app.rating))}${app.rating % 1 >= 0.5 ? '½' : ''}
+                    </div>
+                    <span class="ml-1 text-gray-dark text-sm">${app.rating}</span>
+                  </div>
+                  <span class="text-xs text-gray-dark">${app.downloads}</span>
+                </div>
+              </div>
+            </div>
+          `).join('');
+        }
+      }
+
+      // 为搜索框和按钮添加事件监听
+      // 加载并渲染已审核通过的应用
+      function renderApprovedApps() {
+        const apps = JSON.parse(localStorage.getItem('customApps') || '[]');
+        const approvedApps = apps.filter(app => app.status === 'approved');
+        const appGrid = document.getElementById('app-grid');
+
+        if (appGrid) {
+          if (approvedApps.length === 0) {
+            appGrid.innerHTML = '<div class="text-center py-10"><p class="text-gray-medium">暂无已上架应用</p></div>';
+            return;
+          }
+
+          appGrid.innerHTML = approvedApps.map(app => `
+            <div class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 hover-scale cursor-pointer" onclick="window.location.href='detail.html?id=${app.id}'">
+              <div class="relative">
+                <img src="${app.icon}" alt="${app.name}" class="w-full h-48 object-cover">
+              </div>
+              <div class="p-4">
+                <h3 class="font-bold text-lg">${app.name}</h3>
+                <p class="text-gray-medium text-sm mt-1">${app.category}</p>
+                <div class="flex items-center justify-between mt-3">
+                  <div class="flex items-center">
+                    <div class="flex text-warning text-sm">
+                      ${'★'.repeat(Math.floor(4))}${'½'}
+                    </div>
+                    <span class="ml-1 text-gray-dark text-sm">4.5</span>
+                  </div>
+                  <span class="text-xs text-gray-dark">${app.clicks} 下载</span>
+                </div>
+              </div>
+            </div>
+          `).join('');
+        }
+      }
+
+      // 页面加载完成后执行
+      document.addEventListener('DOMContentLoaded', renderApprovedApps);
+
+    
+  tailwind.config = {
+      theme: {
+        extend: {
+</script>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+    <!-- 导航栏 -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="container mx-auto px-4">
+      <div class="flex items-center justify-between h-16 md:h-20">
+        <!-- Logo -->
+        <div class="flex items-center">
+          <a href="index.html" class="flex items-center space-x-2">
+            <div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
+              <img src="favicon.svg" alt="轻芒商店" class="h-6 w-6 text-white">
+            </div>
+            <span class="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">轻芒商店</span>
+          </a>
+        </div>
+        
+        <!-- 导航链接 - 桌面版 -->
+        <nav class="hidden md:flex space-x-8">
+          <a href="index.html" class="font-medium text-gray-dark hover:text-primary transition-colors px-1 py-5 active:scale-95 active:opacity-80 transition-all duration-200">首页</a>
+          <a href="category.html" class="font-medium text-gray-dark hover:text-primary transition-colors px-1 py-5 active:scale-95 active:opacity-80 transition-all duration-200">分类</a>
+          <a href="ranking.html" class="font-medium text-gray-dark hover:text-primary transition-colors px-1 py-5 active:scale-95 active:opacity-80 transition-all duration-200">排行榜</a>
+          <a href="my-notifications.html" class="font-medium text-primary transition-colors px-1 py-5 active:scale-95 active:opacity-80 transition-all duration-200">我的通知</a>
+          <a href="create-app.html" class="font-medium text-gray-dark hover:text-primary transition-colors px-1 py-5 active:scale-95 active:opacity-80 transition-all duration-200"><i class="fa fa-plus-circle mr-1.5"></i>创建应用</a>
+        </nav>
+        
+        <!-- 搜索框 -->
+        <div class="hidden md:flex items-center relative w-1/3 max-w-md">
+          <input 
+            type="text" 
+            placeholder="搜索应用..." 
+            class="w-full pl-10 pr-4 py-2 rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+            onkeyup="handleSearch()"
+          >
+          <i class="fa fa-search absolute left-4 text-gray-medium"></i>
+          <button id="search-btn" class="absolute right-3 bg-primary text-white rounded-full px-3 py-1 text-sm font-medium">搜索</button>
+        </div>
+        
+        <!-- 用户操作 -->
+        <div class="flex items-center space-x-4">
+          <button class="md:hidden text-gray-dark hover:text-primary transition-colors">
+            <i class="fa fa-search text-xl"></i>
+          </button>
+          <button class="md:hidden text-gray-dark hover:text-primary transition-colors">
+            <i class="fa fa-bars text-xl"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    </header>
+
+    <!-- 主要内容 -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="mb-6">
+            <h1 class="text-2xl font-bold text-gray-900">我的通知</h1>
+            <p class="text-gray-500 mt-1">查看您的应用审核状态和下架通知</p>
+        </div>
+
+        <div id="notifications-container" class="space-y-4">
+            <!-- 通知将通过JavaScript动态生成 -->
+        </div>
+    </main>
+
+
+
+    <script>
+        // 移动端菜单切换
+        // 加载并显示通知
+        document.addEventListener('DOMContentLoaded', function() {
+            const notificationsContainer = document.getElementById('notifications-container');
+            // 从localStorage获取通知
+            const notifications = JSON.parse(localStorage.getItem('userNotifications') || '[]');
+            
+            // 按时间倒序排序
+            notifications.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            
+            if (notifications.length === 0) {
+                notificationsContainer.innerHTML = `
+                    <div class="text-center py-12 bg-white rounded-lg shadow-sm">
+                        <i class="fa fa-bell-o text-gray-300 text-5xl mb-4"></i>
+                        <h3 class="text-lg font-medium text-gray-900">暂无通知</h3>
+                        <p class="mt-1 text-gray-500">您还没有收到任何通知</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // 生成通知列表
+            notifications.forEach(notification => {
+                // 确定状态文本和样式
+                let statusText, statusClass;
+                switch(notification.status) {
+                    case 'approved':
+                        statusText = '审核通过';
+                        statusClass = 'bg-green-50 border-l-4 border-green-500';
+                        break;
+                    case 'rejected':
+                        statusText = '审核不通过';
+                        statusClass = 'bg-red-50 border-l-4 border-red-500';
+                        break;
+                    case 'takenDown':
+                        statusText = '已下架';
+                        statusClass = 'bg-yellow-50 border-l-4 border-yellow-500';
+                        break;
+                    default:
+                        statusText = '状态更新';
+                        statusClass = 'bg-gray-50 border-l-4 border-gray-500';
+                }
+                
+                // 创建通知元素
+                const notificationElement = document.createElement('div');
+
+                notificationElement.className = `${statusClass} p-4 rounded-r-lg shadow-sm`;
+                notificationElement.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-900">${notification.appName}</h3>
+                            <p class="text-sm text-gray-500 mt-1">
+                                <span class="font-medium">${statusText}</span> · 
+                                ${new Date(notification.timestamp).toLocaleString()}
+                            </p>
+                            ${notification.reason ? `
+                                <div class="mt-2 text-sm text-gray-700 bg-white p-3 rounded">
+                                    <span class="font-medium">原因：</span>${notification.reason}
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+                notificationsContainer.appendChild(notificationElement);
+            });
+        });
+    </script>
+</body>
+</html>

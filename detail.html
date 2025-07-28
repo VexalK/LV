@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>应用详情 - App Store</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <link href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <script>
+    tailwind.config = { theme: {
+        extend: {
+          colors: {
+            primary: '#4F46E5',
+            secondary: '#EC4899',
+            warning: '#F59E0B',
+            success: '#10B981',
+            danger: '#EF4444',
+            gray: {
+              light: '#F3F4F6',
+              medium: '#9CA3AF',
+              dark: '#4B5563'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+          boxShadow: {
+            'sm': '0 1px 2px rgba(0,0,0,0.05)',
+            'md': '0 4px 6px rgba(0,0,0,0.1)',
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.3s ease-in-out',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' },
+            }
+          }
+        }
+      }
+    };
+        // 举报功能相关变量
+        let currentAppId = null;
+
+        // 页面加载完成后执行
+        document.addEventListener('DOMContentLoaded', function() {
+            // 获取URL参数中的应用ID
+            const appId = getUrlParam('id');
+            if (appId) {
+                currentAppId = appId;
+            }
+
+            // 绑定举报按钮事件
+            document.getElementById('report-button').addEventListener('click', function() {
+                const appName = document.getElementById('app-name').textContent;
+                document.getElementById('report-app-name').textContent = appName;
+                document.getElementById('report-modal').classList.remove('hidden');
+            });
+
+            // 关闭举报模态框
+            document.getElementById('close-report-modal').addEventListener('click', function() {
+                document.getElementById('report-modal').classList.add('hidden');
+                document.getElementById('report-reason').value = '';
+            });
+
+            // 提交举报
+            document.getElementById('submit-report').addEventListener('click', function() {
+                const reason = document.getElementById('report-reason').value.trim();
+                if (!reason) {
+                    alert('请输入举报原因');
+                    return;
+                }
+
+                if (currentAppId) {
+                    // 创建举报对象
+                    const report = {
+                        id: Date.now().toString(),
+                        appId: currentAppId,
+                        reason: reason,
+                        timestamp: Date.now()
+                    };
+
+                    // 从localStorage获取现有举报
+                    let existingReports = JSON.parse(localStorage.getItem('appReports') || '[]');
+                    existingReports.push(report);
+
+                    // 保存回localStorage
+                    localStorage.setItem('appReports', JSON.stringify(existingReports));
+
+                    // 显示成功提示
+                    alert('举报已提交，感谢您的反馈');
+
+                    // 关闭模态框
+                    document.getElementById('report-modal').classList.add('hidden');
+                    document.getElementById('report-reason').value = '';
+                }
+            });
+        });
+
+    </script>
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto { content-visibility: auto; }
+      .text-shadow { text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+      .hover-scale { transition: transform 0.3s ease; }
+      .hover-scale:hover { transform: scale(1.02); }
+    }
+  </style>
+</head>
+<body class="bg-gray-light font-sans text-gray-dark min-h-screen flex flex-col">
+  <!-- 导航栏 -->
+  <nav class="bg-white/80 backdrop-blur-md shadow-sm fixed w-full z-10 transition-all duration-300" id="navbar">
+    <div class="container mx-auto px-4">
+      <div class="flex justify-between items-center h-16">
+        <div class="flex items-center">
+          <a href="index.html" class="text-2xl font-bold text-primary flex items-center">
+            <i class="fa fa-rocket mr-2"></i>
+            <span>App Store</span>
+          </a>
+        </div>
+        <nav class="hidden md:flex items-center space-x-8">
+          <a href="index.html" class="text-gray-dark hover:text-primary transition-colors active:scale-95 active:opacity-80 transition-all duration-200">首页</a>
+          <a href="category.html" class="text-gray-dark hover:text-primary transition-colors active:scale-95 active:opacity-80 transition-all duration-200">分类</a>
+          <a href="ranking.html" class="text-gray-dark hover:text-primary transition-colors active:scale-95 active:opacity-80 transition-all duration-200">排行榜</a>
+          <a href="my-notifications.html" class="text-gray-dark hover:text-primary transition-colors px-1 py-5 active:scale-95 active:opacity-80 transition-all duration-200"><i class="fa fa-bell mr-2"></i>我的通知</a>
+          <a href="create-app.html" class="text-gray-dark hover:text-primary transition-colors px-1 py-5 active:scale-95 active:opacity-80 transition-all duration-200"><i class="fa fa-plus-circle mr-2"></i>创建应用</a>
+        </nav>
+        <div class="flex items-center space-x-4">
+          <button class="text-gray-dark hover:text-primary transition-colors">
+            <i class="fa fa-search text-xl"></i>
+          </button>
+          <button class="md:hidden text-gray-dark hover:text-primary transition-colors">
+            <i class="fa fa-bars text-xl"></i>
+          </button>
+          <a href="#" class="hidden md:block bg-primary text-white px-4 py-2 rounded-full hover:bg-primary/90 transition-colors">
+            登录
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主内容区 -->
+  <main class="flex-grow container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto" id="app-detail-container">
+      <!-- 加载状态 -->
+      <div class="text-center py-20" id="loading-state">
+        <div class="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        <p class="mt-4 text-gray-medium">加载应用详情中...</p>
+      </div>
+
+      <!-- 应用详情内容（默认隐藏） -->
+      <div class="hidden animate-fade-in" id="app-detail-content">
+        <div class="bg-white rounded-3xl overflow-hidden shadow-md">
+          <div class="relative">
+            <img id="app-banner" src="" alt="应用封面" class="w-full h-64 object-cover">
+            <div class="absolute top-4 right-4 bg-primary/90 text-white text-sm font-bold px-3 py-1 rounded-full" id="app-price">
+              免费
+            </div>
+          </div>
+          <div class="p-6 -mt-16 relative">
+            <div class="flex flex-col md:flex-row items-start md:items-center">
+              <img id="app-icon" src="" alt="应用图标" class="w-32 h-32 rounded-2xl border-4 border-white shadow-lg">
+              <div class="mt-4 md:mt-0 md:ml-6 flex-grow">
+                <h1 class="text-2xl md:text-3xl font-bold" id="app-name"></h1>
+                <p class="text-gray-medium mt-1" id="app-category"></p>
+                <div class="flex items-center mt-3">
+                  <div class="flex text-warning" id="app-rating">
+                    <!-- 星级评分将通过JS动态生成 -->
+                  </div>
+                  <span class="ml-2 text-gray-dark" id="app-rating-value"></span>
+                  <span class="mx-3 text-gray-light">|</span>
+                  <span class="text-gray-dark text-sm" id="app-downloads"></span>
+                </div>
+              </div>
+              <div class="mt-6 md:mt-0 md:ml-6 flex flex-col sm:flex-row gap-3">
+                <button class="bg-primary hover:bg-primary/90 text-white font-bold py-3 px-8 rounded-full transition-colors shadow-md hover:shadow-lg flex items-center">
+                  <i class="fa fa-download mr-2"></i> 下载
+                </button>
+                <button id="report-button" class="bg-danger hover:bg-danger/90 text-white font-bold py-3 px-6 rounded-full transition-colors shadow-md hover:shadow-lg flex items-center">
+                  <i class="fa fa-flag mr-2"></i> 举报
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="px-6 pb-6">
+            <div class="border-t border-gray-100 pt-6 mt-2">
+              <h2 class="text-xl font-bold mb-4">应用介绍</h2>
+              <p class="text-gray-dark leading-relaxed" id="app-description"></p>
+            </div>
+
+            <div class="border-t border-gray-100 pt-6 mt-6">
+              <h2 class="text-xl font-bold mb-4">应用截图</h2>
+              <div class="grid grid-cols-2 md:grid-cols-3 gap-4" id="app-screenshots">
+                <!-- 截图将通过JS动态生成 -->
+              </div>
+            </div>
+
+            <div class="border-t border-gray-100 pt-6 mt-6">
+              <h2 class="text-xl font-bold mb-4">应用信息</h2>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div class="flex justify-between py-2 border-b border-gray-100">
+                  <span class="text-gray-medium">开发商</span>
+                  <span id="app-developer"></span>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-100">
+                  <span class="text-gray-medium">更新日期</span>
+                  <span id="app-update-date"></span>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-100">
+                  <span class="text-gray-medium">大小</span>
+                  <span id="app-size"></span>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-100">
+                  <span class="text-gray-medium">版本</span>
+                  <span id="app-version"></span>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-100">
+                  <span class="text-gray-medium">兼容性</span>
+                  <span id="app-compatibility"></span>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-100">
+                  <span class="text-gray-medium">语言</span>
+                  <span id="app-language"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 错误状态 -->
+      <div class="hidden text-center py-20" id="error-state">
+        <i class="fa fa-exclamation-circle text-5xl text-danger mb-4"></i>
+        <h3 class="text-xl font-bold mb-2">应用不存在</h3>
+        <p class="text-gray-medium mb-6">抱歉，未找到该应用的信息</p>
+        <a href="index.html" class="inline-block bg-primary text-white px-6 py-2 rounded-full hover:bg-primary/90 transition-colors">
+          返回首页
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <!-- 页脚已移除 -->
+
+  <script>
+    // 获取URL参数
+    function getUrlParam(name) {
+      const reg = new RegExp(`(^|&)${name}=([^&]*)(&|$)`);
+      const r = window.location.search.substr(1).match(reg);
+      return r ? decodeURIComponent(r[2]) : null;
+    }
+
+    // 获取应用详情
+    function getAppDetail(appId) {
+      // 从全局appData中查找对应ID的应用
+      const app = window.appData.find(item => item.id === parseInt(appId));
+      return app;
+    }
+
+    // 生成星级评分HTML
+    function generateRatingHtml(rating) {
+      const fullStars = Math.floor(rating);
+      const hasHalfStar = rating % 1 >= 0.5;
+      let html = '';
+
+      for (let i = 0; i < fullStars; i++) {
+        html += '<i class="fa fa-star"></i>';
+      }
+
+      if (hasHalfStar) {
+        html += '<i class="fa fa-star-half-o"></i>';
+      }
+
+      const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+      for (let i = 0; i < emptyStars; i++) {
+        html += '<i class="fa fa-star-o"></i>';
+      }
+
+      return html;
+    }
+
+    // 渲染应用详情
+    function renderAppDetail(app) {
+      document.getElementById('app-name').textContent = app.name;
+      document.getElementById('app-icon').src = app.icon;
+      document.getElementById('app-icon').alt = app.name;
+      document.getElementById('app-banner').src = app.banner || app.icon;
+      document.getElementById('app-banner').alt = app.name;
+      document.getElementById('app-category').textContent = app.category;
+      document.getElementById('app-price').textContent = app.price;
+      document.getElementById('app-rating').innerHTML = generateRatingHtml(app.rating);
+      document.getElementById('app-rating-value').textContent = app.rating.toFixed(1);
+      document.getElementById('app-downloads').textContent = app.downloads;
+      document.getElementById('app-description').textContent = app.description || '暂无详细介绍';
+      document.getElementById('app-developer').textContent = app.developer || '未知开发商';
+      document.getElementById('app-update-date').textContent = app.updateDate || '未知日期';
+      document.getElementById('app-size').textContent = app.size || '未知大小';
+      document.getElementById('app-version').textContent = app.version || '1.0.0';
+      document.getElementById('app-compatibility').textContent = app.compatibility || '需要 iOS 12.0 或更高版本';
+      document.getElementById('app-language').textContent = app.language || '简体中文';
+
+      // 渲染截图
+      const screenshotsContainer = document.getElementById('app-screenshots');
+      if (app.screenshots && app.screenshots.length > 0) {
+        screenshotsContainer.innerHTML = app.screenshots.map(screenshot => `
+          <div class="rounded-xl overflow-hidden shadow-sm hover-scale">
+            <img src="${screenshot}" alt="${app.name} 截图" class="w-full h-40 object-cover">
+          </div>
+        `).join('');
+      } else {
+        screenshotsContainer.innerHTML = `
+          <div class="col-span-full text-center py-8 text-gray-medium">
+            <i class="fa fa-picture-o text-4xl mb-2"></i>
+            <p>暂无截图</p>
+          </div>
+        `;
+      }
+
+      // 显示内容，隐藏加载状态
+      document.getElementById('loading-state').classList.add('hidden');
+      document.getElementById('app-detail-content').classList.remove('hidden');
+    }
+
+    // 页面加载完成后执行
+    // 已移除原有的应用详情渲染逻辑
+    /* document.addEventListener('DOMContentLoaded', function() {
+      const appId = getUrlParam('id');
+      if (!appId) {
+        document.getElementById('loading-state').classList.add('hidden');
+        document.getElementById('error-state').classList.remove('hidden');
+        return;
+      }
+
+      // 确保appData已加载
+      if (window.appData) {
+        const app = getAppDetail(appId);
+        if (app) {
+          renderAppDetail(app);
+        } else {
+          document.getElementById('loading-state').classList.add('hidden');
+          document.getElementById('error-state').classList.remove('hidden');
+        }
+      } else {
+        // 如果appData尚未加载，设置一个短延迟后重试
+        setTimeout(() => {
+          if (window.appData) {
+            const app = getAppDetail(appId);
+            if (app) {
+              renderAppDetail(app);
+            } else {
+              document.getElementById('loading-state').classList.add('hidden');
+              document.getElementById('error-state').classList.remove('hidden');
+            }
+          } else {
+            document.getElementById('loading-state').classList.add('hidden');
+            document.getElementById('error-state').classList.remove('hidden');
+          }
+        }, 500);
+      }
+
+      // 导航栏滚动效果
+      const navbar = document.getElementById('navbar');
+      window.addEventListener('scroll', function() {
+        if (window.scrollY > 10) {
+          navbar.classList.add('shadow-md');
+          navbar.classList.remove('shadow-sm');
+        } else {
+          navbar.classList.remove('shadow-md');
+          navbar.classList.add('shadow-sm');
+        }
+      });
+    });
+  </script>
+    <!-- 举报模态框 -->
+    <div id="report-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4">
+            <h3 class="text-xl font-bold mb-4">举报应用</h3>
+            <p class="text-gray-dark mb-4" id="report-app-name">应用名称</p>
+            <div class="mb-6">
+                <label for="report-reason" class="block text-sm font-medium mb-2">举报原因</label>
+                <textarea id="report-reason" class="w-full border border-gray-300 rounded-lg p-3 text-sm" rows="3"></textarea>
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button id="close-report-modal" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-dark hover:bg-gray-50 transition-colors">取消</button>
+                <button id="submit-report" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">提交</button>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
